@@ -17,6 +17,7 @@ in
   };
 
   env = {
+    RUST_BACKTRACE = "1"; # Enable backtraces for Rust applications
     RUST_LOG = "debug"; # Set the logging level for Rust applications
   };
 

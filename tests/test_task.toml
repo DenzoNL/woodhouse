@@ -1,0 +1,5 @@
+name = "Test task"
+env = "test"
+command = "echo"
+args = ["Hello, World!"]
+schedule = "*/5 * * *"

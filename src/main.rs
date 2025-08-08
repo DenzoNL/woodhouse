@@ -2,6 +2,8 @@
 mod config;
 use config::{APP_NAME, APP_PORT};
 
+mod task;
+
 use axum::{Router, routing::get};
 
 #[tokio::main]
