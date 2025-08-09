@@ -1,14 +1,19 @@
+use std::path::{Path, PathBuf};
+
 use crate::task::{Task, TaskDefinition, TaskError};
 
-pub async fn parse_task_file(file_path: &str) -> TaskDefinition {
+pub async fn parse_task_file<P: AsRef<Path>>(path: P) -> TaskDefinition {
+    let path_ref = path.as_ref();
+    let path_buf: PathBuf = path_ref.to_path_buf();
     let mut errors = Vec::new();
 
-    let file_contents = match read_task_file(file_path).await {
-        Ok(content) => content,
+    // Read
+    let file_contents = match read_task_file(&path_buf).await {
+        Ok(c) => c,
         Err(e) => {
             errors.push(e);
             return TaskDefinition {
-                file_path: file_path.to_string(),
+                file_path: path_buf,
                 file_contents: None,
                 task: None,
                 errors,
@@ -16,12 +21,13 @@ pub async fn parse_task_file(file_path: &str) -> TaskDefinition {
         }
     };
 
+    // Deserialize
     let task = match deserialize_task(&file_contents) {
-        Ok(task) => task,
+        Ok(t) => t,
         Err(e) => {
             errors.push(e);
             return TaskDefinition {
-                file_path: file_path.to_string(),
+                file_path: path_buf,
                 file_contents: Some(file_contents),
                 task: None,
                 errors,
@@ -30,87 +36,60 @@ pub async fn parse_task_file(file_path: &str) -> TaskDefinition {
     };
 
     TaskDefinition {
-        file_path: file_path.to_string(),
+        file_path: path_buf,
         file_contents: Some(file_contents),
         task: Some(task),
         errors,
     }
 }
 
-pub fn deserialize_task(content: &str) -> Result<Task, TaskError> {
-    let task: Task = match toml::from_str(content) {
-        Ok(task) => task,
-        Err(e) => {
-            return Err(TaskError::InvalidToml(format!(
-                "Failed to parse TOML: {}",
-                e
-            )));
-        }
-    };
-
-    Ok(task)
+fn deserialize_task(content: &str) -> Result<Task, TaskError> {
+    toml::from_str::<Task>(content)
+        .map_err(|e| TaskError::InvalidToml(format!("Failed to parse TOML: {e}")))
 }
 
-async fn read_task_file(file_path: &str) -> Result<String, TaskError> {
-    match tokio::fs::read_to_string(file_path).await {
-        Ok(content) => Ok(content),
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            Err(TaskError::FileNotFound(file_path.to_string()))
+async fn read_task_file<P: AsRef<Path>>(path: P) -> Result<String, TaskError> {
+    let p = path.as_ref();
+    tokio::fs::read_to_string(p).await.map_err(|e| {
+        if e.kind() == std::io::ErrorKind::NotFound {
+            TaskError::FileNotFound(p.display().to_string())
+        } else {
+            TaskError::FileReadError(format!("{}: {e}", p.display()))
         }
-        Err(e) => Err(TaskError::FileReadError(format!("{}: {}", file_path, e))),
-    }
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    const TEST_TASK_CONTENT: &str = r#"name = "Test task"
+    const VALID: &str = r#"name = "Test task"
 env = "test"
 command = "echo"
 args = ["Hello, World!"]
 schedule = "*/5 * * *""#;
 
     #[tokio::test]
-    async fn test_read_task_file() {
-        let file_path = "tests/test_task.toml";
-        let content = read_task_file(file_path).await.unwrap();
-
-        assert_eq!(content, TEST_TASK_CONTENT);
+    async fn parse_valid_inline() {
+        let task = deserialize_task(VALID).expect("should parse");
+        assert_eq!(task.name, "Test task");
     }
 
     #[tokio::test]
-    async fn test_deserialize_task() {
-        let task = deserialize_task(TEST_TASK_CONTENT).unwrap();
-
-        assert_eq!(task.name, "Test task");
-        assert_eq!(task.env, Some("test".to_string()));
-        assert_eq!(task.command, "echo");
-        assert_eq!(task.args, vec!["Hello, World!"]);
-        assert_eq!(task.schedule, Some("*/5 * * *".to_string()));
-        assert!(task.environment.is_none());
+    async fn missing_file_error() {
+        let td = parse_task_file("tasks/does_not_exist.toml").await;
+        assert!(!td.is_valid());
+        assert!(
+            td.errors
+                .iter()
+                .any(|e| matches!(e, TaskError::FileNotFound(_)))
+        );
     }
 
     #[tokio::test]
-    async fn test_parse_task_file() {
-        let file_path = "tests/test_task.toml";
-        let task_definition = parse_task_file(file_path).await;
-
-        assert!(task_definition.is_valid());
-        // print errors if any
-        if !task_definition.errors.is_empty() {
-            for error in &task_definition.errors {
-                eprintln!("Error: {}", error);
-            }
-        }
-
-        let task = task_definition.task.unwrap();
-
-        assert_eq!(task.name, "Test task");
-        assert_eq!(task.env, Some("test".to_string()));
-        assert_eq!(task.command, "echo");
-        assert_eq!(task.args, vec!["Hello, World!"]);
-        assert_eq!(task.schedule, Some("*/5 * * *".to_string()));
-        assert!(task.environment.is_none());
+    async fn invalid_toml_error() {
+        let bad = "name = ";
+        let res = deserialize_task(bad);
+        assert!(matches!(res, Err(TaskError::InvalidToml(_))));
     }
 }

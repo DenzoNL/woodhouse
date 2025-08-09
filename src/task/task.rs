@@ -1,19 +1,19 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Task {
     pub name: String,
     pub env: Option<String>,
     pub command: String,
-    pub args: Vec<String>,
+    pub args: Option<Vec<String>>,
     pub environment: Option<HashMap<String, String>>,
     pub schedule: Option<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Serialize, Clone)]
 pub struct TaskDefinition {
-    pub file_path: String,
+    pub file_path: PathBuf,
     pub file_contents: Option<String>,
     pub task: Option<Task>,
     pub errors: Vec<TaskError>,
@@ -23,9 +23,19 @@ impl TaskDefinition {
     pub fn is_valid(&self) -> bool {
         self.task.is_some() && self.errors.is_empty()
     }
+
+    pub fn get_name(&self) -> &str {
+        if let Some(task) = &self.task {
+            return task.name.as_str();
+        }
+        self.file_path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("unknown")
+    }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Serialize, Clone)]
 pub enum TaskError {
     FileNotFound(String),
     FileReadError(String),

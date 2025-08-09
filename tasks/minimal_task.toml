@@ -1,0 +1,2 @@
+name = "Minimal task"
+command = "echo Hello, World!"
