@@ -1,0 +1,69 @@
+<div class="card {% if !task.is_valid() %}card-invalid{% endif %}" data-task="{{ task.get_name() }}">
+  <div class="card-header flex-col items-start gap-2">
+  <div class="w-full flex items-start gap-2">
+      <h2 class="card-title flex items-center gap-1" title="{{ task.file_path.display() }}">
+        {% if !task.is_valid() %}
+        <span aria-hidden="true" class="text-red-500">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" />
+          </svg>
+        </span>
+        {% endif %}
+        {{ task.get_name() }}
+      </h2>
+      <button type="button" disabled aria-label="Open task details" class="icon-btn ml-auto" title="Details (coming soon)">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 sm:w-4 sm:h-4">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+        </svg>
+      </button>
+    </div>
+  <div class="text-base text-neutral-400 leading-snug w-full clamp-3" title="{{ task.description().unwrap_or(" ") }}">
+      {% if task.description().is_some() %}
+        {{ task.description().unwrap() }}
+      {% else if task.is_valid() %}
+        <span class="italic">No description</span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="flex flex-col flex-1">
+    <div class="px-4 pt-1 space-y-3 text-sm flex-1">
+      {% if task.errors.len() > 0 %}
+        <ul class="list-disc ms-4 text-xs space-y-0.5 text-red-500 font-mono">
+          {% for e in task.errors %}
+            <li>{{ e }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
+  <div class="mt-auto px-4 pb-3 pt-2 text-[11px] flex items-center justify-between gap-3">
+      <div class="flex flex-wrap gap-2">
+        {% if task.schedule().is_some() %}
+          <span class="inline-flex items-center gap-1 rounded-full border border-neutral-700 bg-neutral-800/60 px-2 py-0.5 font-medium text-neutral-300" title="Cron schedule">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+            </svg>
+            {{ task.schedule().unwrap() }}
+          </span>
+        {% endif %}
+        {% if task.environment_label().is_some() %}
+          <span class="inline-flex items-center gap-1 rounded-full border border-neutral-700 bg-neutral-800/60 px-2 py-0.5 font-medium text-neutral-300" title="Environment">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z" />
+            </svg>
+            {{ task.environment_label().unwrap() }}
+          </span>
+        {% endif %}
+      </div>
+      <div class="flex items-center gap-2 ml-auto">
+        {% if task.is_valid() %}
+          <button type="button" disabled aria-label="Trigger task" title="Trigger (coming soon)" class="icon-btn rounded-full">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 sm:w-4 sm:h-4">
+              <path fill-rule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>

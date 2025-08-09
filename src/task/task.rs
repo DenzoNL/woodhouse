@@ -9,6 +9,7 @@ pub struct Task {
     pub args: Option<Vec<String>>,
     pub environment: Option<HashMap<String, String>>,
     pub schedule: Option<String>,
+    pub description: Option<String>,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -33,6 +34,41 @@ impl TaskDefinition {
             .and_then(|s| s.to_str())
             .unwrap_or("unknown")
     }
+
+    pub fn status_label(&self) -> String {
+        if self.errors.is_empty() {
+            "Valid".to_string()
+        } else {
+            format!("Invalid ({} errors)", self.errors.len())
+        }
+    }
+
+    pub fn file_basename(&self) -> &str {
+        self.file_path
+            .file_name()
+            .and_then(|s| s.to_str())
+            .unwrap_or("unknown")
+    }
+
+    pub fn schedule(&self) -> Option<&str> {
+        self.task.as_ref().and_then(|t| t.schedule.as_deref())
+    }
+
+    pub fn environment_label(&self) -> Option<&str> {
+        self.task.as_ref().and_then(|t| t.env.as_deref())
+    }
+
+    pub fn description(&self) -> Option<&str> {
+        self.task.as_ref().and_then(|t| t.description.as_deref())
+    }
+}
+
+// Placeholder for future runtime metadata (next run, last run, running state)
+#[derive(Debug, Serialize, Clone, Default)]
+pub struct TaskRuntimeStatus {
+    pub last_run: Option<String>,
+    pub next_run: Option<String>,
+    pub is_running: bool,
 }
 
 #[derive(Debug, Serialize, Clone)]

@@ -1,4 +1,5 @@
 name = "Test task"
+description = "This is a test task to demonstrate what a task looks like in Woodhouse."
 env = "test"
 command = "echo"
 args = ["Hello, World!"]

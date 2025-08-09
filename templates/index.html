@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+{% block content %}
+<section class="mb-6 flex items-center justify-between">
+  <h2 class="text-lg font-semibold">Tasks <span class="text-slate-400 font-normal">({{ tasks.len() }})</span></h2>
+</section>
+{% if tasks.len() == 0 %}
+  <p class="text-slate-500 italic">No tasks loaded.</p>
+{% else %}
+  <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+  {% for task in tasks %}
+    {% include "partials/task_card.html" %}
+  {% endfor %}
+  </div>
+{% endif %}
+{% endblock %}

@@ -8,6 +8,7 @@ in
   # https://devenv.sh/reference/options/
   packages = with pkgs; [ 
     cargo-watch # Automatically re-runs cargo commands when files change
+    tailwindcss # Tailwind CSS CLI for building styles
   ];
 
   # Enable Rust language support
